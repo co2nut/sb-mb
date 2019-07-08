@@ -1,0 +1,30 @@
+export const COLOR_RED = '#FA7268'
+export const COLOR_RED_2 = '#00B9BD'
+export const COLOR_RED_ERR = '#F04A60'
+
+export const COLOR_GREEN = '#588B8B'
+export const COLOR_GREEN_2 = '#F5A2A2'
+export const COLOR_GREEN_3 = '#6cc56c'
+export const COLOR_GREEN_LIGHT = '#A8DBA8'
+
+export const COLOR_BLUE = '#41b9e4'
+export const COLOR_BLUE_1 = '#4DBCE9'
+export const COLOR_BLUE_2 = '#26ADE4'
+export const COLOR_BLUE_LIGHT = '#97ddf6'
+
+export const COLOR_ORANGE = '#f18d35'
+
+export const COLOR_COMPLAINT = 'rgb(217,171,255)'
+export const COLOR_FACILITY = 'rgb(107,228,255)'
+export const COLOR_EPAS = 'rgb(255,171,171)'
+export const COLOR_NOTIFICATION = 'rgb(255,218,171)'
+export const COLOR_UTICHAT = 'rgb(167,197,189)'
+export const COLOR_PAYMENT = 'rgb(183,227,192)'
+export const COLOR_SOS = 'rgb(219,186,229)'
+export const COLOR_EFORM = 'rgb(243,157,212)'
+
+export const COLOR_TEXT = '#0a0a0a'
+export const COLOR_TEXT_GREY = '#3d3d3d'
+export const COLOR_TEXT_GREY_LIGHT = '#CDCDCD'
+export const COLOR_TEXT_GREY_LIGHTB = '#F1EBEB'
+export const COLOR_TEXT_GREY_LIGHTC = '#f7f7f7'
