@@ -1,37 +1,21 @@
 import React, { Component } from 'react'
-import { ImageBackground, ScrollView, View, Text, TouchableOpacity, Image, Dimensions } from 'react-native'
+import { Animated, Easing, Alert, ScrollView, View, Text, FlatList, TouchableOpacity, Image, Dimensions, ActivityIndicator, ImageBackground } from 'react-native'
 import { connect } from 'react-redux'
 import Icon from 'react-native-vector-icons/FontAwesome'
 import client from '../feathers'
 import { AsyncStorage } from "react-native"
-import * as t from "tcomb-form-native"
-import AwesomeAlert from 'react-native-awesome-alerts'
-import Loading from "./common/Loading"
-import Logo from "./common/Logo"
-import  STYLESHEET  from "./common/FormStyle"
-// import { updateProfile } from '../actions'
+import { updateProfile, updateMachine, updateActivePaymentItem } from '../actions'
 import { bindActionCreators } from "redux"
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
-import { COLOR_NOTIFICATION, COLOR_TEXT_GREY_LIGHT, COLOR_TEXT_GREY_LIGHTC, COLOR_TEXT, COLOR_BLUE, COLOR_TEXT_GREY, COLOR_RED_ERR } from './common/Color'
-import { BTN_PRIMARY, BTN_TEXT } from './common/Styles'
-import { Divider } from 'react-native-elements';
-// import axios from 'axios';
-// import Carousel from 'react-native-snap-carousel';
-var FormData = require('form-data');
-var _ = require('lodash')
+import { Input, Divider } from 'react-native-elements';
+import moment from 'moment'
+import Loading from "./common/Loading"
 
-let Form = t.form.Form;
-
-const window = Dimensions.get('window')
-
-var InputForm = t.struct({
-  // types: Types,
-  username: t.String,
-  password: t.String,
-  phone: t.String,
-
-});
-
+/*
+  Set the total with the response for the intial payments request
+  If you want the total to update, pullToRefresh
+*/
+const queryLimit = 10;
 class Calendar extends Component {
     static navigationOptions = ({navigation}) => {
       return {
@@ -41,174 +25,210 @@ class Calendar extends Component {
 
     constructor (props) {
       super(props)
-
-      this.state={
-        options: this.getFormOptions(),
-        InputForm: InputForm,
-        value:{},
-        showAlert:false,
-        leaveScene:false,
-        loginUser:null,
-        submitting:false
-      }
-
-      this.onSubmit = this.onSubmit.bind(this)
-      this.onFormChange = this.onFormChange.bind(this)
-      this.getFormOptions = this.getFormOptions.bind(this);
+      this.state = {
+        loading:true,
+        data:[],
+        refreshing: false,
+        counterName:'',
+        total: null,
+        showAllPayments: true,
+        recSkip:queryLimit,
+      };
     }
 
-    getFormOptions(){
-      function template(locals){
-        return (
-          <View style={{width:'100%', flexDirection:'column'}}>
-          <Divider style={{ backgroundColor: COLOR_TEXT_GREY_LIGHT }} />
-          {locals.inputs.username}
-          <Divider style={{ backgroundColor: COLOR_TEXT_GREY_LIGHT }} />
-          {locals.inputs.phone}
-          <Divider style={{ backgroundColor: COLOR_TEXT_GREY_LIGHT }} />
-          {locals.inputs.password}
-          <Divider style={{ backgroundColor: COLOR_TEXT_GREY_LIGHT }} />
-          </View>
-        );
-      }
-
-      return ({
-        template: template,
-        stylesheet: STYLESHEET,
-        auto:'placeholders',
-        fields: {
-          username: {
-            placeholderTextColor:COLOR_TEXT_GREY_LIGHT,
-            error: 'Invalid Username',
-            autoCorrect: false,
-          },
-          phone: {
-            placeholderTextColor:COLOR_TEXT_GREY_LIGHT,
-            error: 'Invalid Phone',
-            autoCorrect: false,
-          },
-          password: {
-            placeholderTextColor:COLOR_TEXT_GREY_LIGHT,
-            error: 'Invalid Password',
-            autoCorrect: false,
-            secureTextEntry:true
-          },
-        }
+    componentDidMount(){
+      client.service('bookings').on('created', (Ticketbatches) => {
+        this.initializeData(0);
       })
+
+      client.service('bookings').on('removed', (Ticketbatches) => {
+        this.initializeData(0);
+      })
+
+      client.service('bookings').on('updated', (Ticketbatches) => {
+        this.initializeData(0);
+      })
+
+      client.service('bookings').on('patched', (Ticketbatches) => {
+        this.initializeData(0);
+      })
+
     }
 
     componentWillMount(){
+      this.initializeData(0);
     }
 
-    onSubmit() {
-      // perform login
-      var value = this.refs.form.getValue();
-      if (value) {
-        client.service('users').create({
-          username:value.username,
-          password:value.password,
-          phone:value.phone
-        })
-        .then((res)=>{
-           console.log('success', {res});
-           // this.props.loginSuccessful(res);
-           // this.props.history.push('/dashboard');
-           return this.props.navigation.navigate('Login')
-        })
-        .catch((err)=>{
-          console.log({err});
-          // alert('Invalid USER or PASSWORD');
-        })
 
-        // let formData = new FormData();
-        // formData.append('username',value.username)
-        // formData.append('password',value.Password)
+    getQueryObject = (skip) => {
+        return {
+          query:{
+            user: this.props.profile.userInfo._id,
+            $sort: {
+              createdAt: -1
+            },
+            $limit:queryLimit,
+            $skip:skip,
+          }
+        }
+    }
 
-        this.setState({submitting:true})
+    initializeData(skip) {
+      const queryObj = this.getQueryObject(skip)
+
+      client.service('bookings').find(queryObj)
+       .then( (res)=> {
+         this.setState({
+             data:res.data,
+             refreshing: false,
+             total: res.data.total,
+             recSkip:res.data.length,
+             loading:false
+         })
+       })
+       .catch(err => {
+         this.setState({refreshing: false});
+       })
+    }
+
+    handleRefresh = () => {
+      this.setState({
+        refreshing: true,
+        data: []
+      }, () => {this.initializeData()})
+    }
+
+    fetchMoreData = () => {
+      if(this.state.data.length === this.state.total) {
+        return;
       }
+      const queryObj = this.getQueryObject(this.state.recSkip)
+
+      return client.service('bookings').find(queryObj)
+       .then( (res)=> {
+         if(res.data.length>0){
+           this.setState({
+             data:this.state.data.push(res.data),
+             recSkip:this.state.recSkip + res.data.length
+           })
+         }
+         this.setState({refreshing: false})
+       })
+       .catch(err => {
+         this.setState({refreshing: false});
+         console.log(err)
+       })
     }
 
-    onFormChange(value){
-      this.setState({value:value});
+    _renderSportsType(btn){
+      if (btn > 13){
+        return 'FUTSAL'
+      }
+      return 'BADMINTON'
+
     }
 
-    hideAlert(){
-      this.setState({ leaveScene: true })
-      // this.props.navigation.navigate('Complaints',{propertyUnit:this.state.propertyUnitId,property:this.state.propertyId})
+    renderRow = ({item, index}) => {
+
+      return(
+          <View style={{flexDirection:'row', justifyContent:'space-around'}}>
+
+            <View style={{flexDirection:'column', padding: 5, flex: 1}}>
+              <Text style={{color:'#fff'}}>{this._renderSportsType(item.btn)}</Text>
+              <Text style={{color:'#fff'}}>{ 'Court ' + item.btn}</Text>
+            </View>
+            <View style={{flexDirection: 'column', padding: 5, flex: 1}}>
+              <Text style={{color:'#fff'}}>{item.bookingdate}</Text>
+              <Text style={{color:'#fff'}}>{moment(item.dateitem).format('HH:mm') + ' - ' + moment(item.dateitem2).format('HH:mm') }</Text>
+            </View>
+          </View>
+      )
     }
+
+    _keyExtractor = (item, index) => item._id
+
+    handleSwitch = () => {
+        this.setState(old => ({showAllPayments: !old.showAllPayments}))
+    }
+
 
     render(){
-      if(this.state.leaveScene === true || this.state.submitting === true){
-        return (<Loading/>);
-      }else{
-        return (
-          <KeyboardAwareScrollView
-            scrollEnabled={false}
-            keyboardShouldPersistTaps='always'
-            contentContainerStyle={styles.container}
-            >
-              <ImageBackground source={require('../assets/badmintonbg.jpg')} style={{ width:'100%', height:'100%', opacity:0.8, backgroundColor:'#000', justifyContent:'space-around'}} >
-                <View><Text>Calendar</Text></View>
-              </ImageBackground>
-            </KeyboardAwareScrollView>
-        )
-      }
+      return (this.state.loading)?
+      <Loading/>
+      :
+        (
+        <KeyboardAwareScrollView
+          scrollEnabled={true}
+          keyboardShouldPersistTaps='always'
+          contentContainerStyle={styles.container}
+          >
+
+            <ImageBackground source={require('../assets/badmintonbg.jpg')} style={{ width:'100%', height:'100%', opacity:0.8, backgroundColor:'#000', justifyContent:'space-around'}} >
+              <View style={{flex:10, width:'100%', justifyContent:'space-around', paddingVertical:20}}>
+
+                <Text style={{alignSelf:'center', fontWeight:'bold', fontSize:20, color:'#fff', marginBottom:10}}>Bookings History</Text>
+
+                <FlatList
+                  data={this.state.data}
+                  renderItem={this.renderRow}
+                  refreshing={this.state.refreshing}
+                  onRefresh={this.handleRefresh}
+                  ItemSeparatorComponent={() => (<View style={{height:1, width: '95%', backgroundColor: 'white', marginLeft: 'auto', marginRight: 'auto'}}></View>)}
+                  onEndReachedThreshold={0.3}
+                  onEndReached={this.fetchMoreData}
+                />
+
+              </View>
+            </ImageBackground>
+
+
+          </KeyboardAwareScrollView>
+      )
+
+
     }
 }
 
+
 const styles = {
-  carousel:{
-    alignItems: 'center',
-  },
-  slide:{
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    elevation:1
-  },
   container: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent:'space-around',
     flex:1,
     paddingTop: 20,
     paddingHorizontal:20,
-    backgroundColor: '#000',
+    backgroundColor: 'black'
   },
-  logo:{
-    width:120,
-    height:130
+  rowView:{
+    flex: 1,
+    borderColor: 'black',
+    borderWidth: 0.5,
+    padding: 5,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
-  buttonText: {
-    fontSize: 15,
-    color: 'white',
-    alignSelf: 'center'
+  rowViewBig:{
+    flex: 2,
+    borderColor: 'black',
+    borderWidth: 0.5,
+    padding: 5,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
-  err:{
-    borderColor:COLOR_RED_ERR,
-    color:COLOR_RED_ERR
-  },
-  label:{
-    fontWeight:'600',
-    fontSize:15,
-    marginBottom:10,
-    color:COLOR_BLUE
+  tableHeader: {
+    fontWeight: 'bold',
+    backgroundColor: '#4682b4'
   }
 }
 
 function mapStateToProps(state) {
   return {
-    // profile: state.profile,
-    // app: state.app
+    profile: state.profile,
   }
 }
 
 // function mapDispatchToProps(dispatch) {
 //   return bindActionCreators({
-//     updateProfile: updateProfile,
 //     }, dispatch);
 // }
 

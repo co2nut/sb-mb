@@ -27,9 +27,9 @@ const TabNavigator = createBottomTabNavigator(
       Home: {
         screen: Home
       },
-      Match: {
-        screen: Match
-      },
+      // Match: {
+      //   screen: Match
+      // },
       Calendar: {
         screen: Calendar
       },

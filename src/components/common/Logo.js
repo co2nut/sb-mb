@@ -31,7 +31,7 @@ class Logo extends Component {
         <View style={styles.container}>
           <Image
             style={styles.logo}
-            source={require('../../assets/logo.jpg')}
+            source={require('../../assets/ssa-logo.png')}
           />
           <Text style={{color:COLOR_TEXT_GREY, fontSize:16, fontWeight:'600', marginTop:10}}>{this.props.title}</Text>
         </View>
@@ -55,8 +55,8 @@ const styles = {
       justifyContent: "center",
     },
     logo: {
-      width: 70,
-      height: 80
+      width: 300,
+      height: 200
     }
 }
 

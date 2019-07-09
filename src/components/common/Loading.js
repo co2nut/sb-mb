@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { View, Text, TouchableOpacity, Image,  Animated, TouchableWithoutFeedback  } from 'react-native';
 import { connect } from 'react-redux';
+import { COLOR_ORANGE } from './Color'
 
 class Loading extends Component {
     state = {
@@ -36,10 +37,10 @@ class Loading extends Component {
       if( this.props.type === 'empty' ){
         return (
           <View style={[styles.container, this.props.style]}>
-            {/*}<Image
+            <Image
               style={{height:150,width:120, alignSelf:'center'}}
-              source={require('../../assets/robot.png')}
-            />*/}
+              source={require('../../assets/ssa-logo-white.png')}
+            />
             <Text style={{color:'grey', marginTop:20, fontSize:40, fontWeight:'600', opacity:0.7, alignSelf:'center'}}>Opps!</Text>
             <Text style={{color:'grey', marginTop:30, alignSelf:'center'}}>No Records Found</Text>
           </View>
@@ -47,11 +48,11 @@ class Loading extends Component {
       }else{
         return (
             <View style={[styles.container, this.props.style]}>
-              {/*}<Animated.Image
+              <Animated.Image
                 style={[styles.logo, animatedStyles]}
-                source={require('../../assets/logo.png')}
-              />*/}
-              <Animated.Text style={[animatedStyles, {color:'grey', marginTop:30, alignSelf:'center'}]}>Loading</Animated.Text>
+                source={require('../../assets/ssa-logo.png')}
+              />
+            <Animated.Text style={[animatedStyles, {color:'#fff', marginTop:30, alignSelf:'center'}]}>Loading</Animated.Text>
             </View>
         )
       }
@@ -66,15 +67,16 @@ const styles = {
       flexDirection: 'column',
       justifyContent: 'space-around',
       alignItems: 'center',
-      backgroundColor:'#fff'
+      backgroundColor:'#000'
     },
     container: {
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
+      backgroundColor:'#000'
     },
     logo: {
-      width: 70,
+      width: 150,
       height: 80
     }
 }

@@ -12,25 +12,15 @@ import  STYLESHEET  from "./common/FormStyle"
 // import { updateProfile } from '../actions'
 import { bindActionCreators } from "redux"
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
-import { COLOR_NOTIFICATION, COLOR_TEXT_GREY_LIGHT, COLOR_TEXT_GREY_LIGHTC, COLOR_TEXT, COLOR_BLUE, COLOR_TEXT_GREY, COLOR_RED_ERR } from './common/Color'
-import { BTN_PRIMARY, BTN_TEXT } from './common/Styles'
-import { Divider } from 'react-native-elements';
+import { COLOR_ORANGE, COLOR_RED, COLOR_GREEN, COLOR_NOTIFICATION, COLOR_TEXT_GREY_LIGHT, COLOR_TEXT_GREY_LIGHTC, COLOR_TEXT, COLOR_BLUE, COLOR_TEXT_GREY, COLOR_RED_ERR } from './common/Color'
+import { FAC_CARD, ACT_TITLE_1, ACT_VAL_1, TITLE_1, USERID, USERNAME, BTN_PRIMARY, BTN_TEXT } from './common/Styles'
+import { Avatar, Divider } from 'react-native-elements';
+import moment from 'moment';
 // import axios from 'axios';
 // import Carousel from 'react-native-snap-carousel';
-var FormData = require('form-data');
 var _ = require('lodash')
 
-let Form = t.form.Form;
-
 const window = Dimensions.get('window')
-
-var InputForm = t.struct({
-  // types: Types,
-  username: t.String,
-  password: t.String,
-  phone: t.String,
-
-});
 
 class Profile extends Component {
     static navigationOptions = ({navigation}) => {
@@ -43,88 +33,11 @@ class Profile extends Component {
       super(props)
 
       this.state={
-        options: this.getFormOptions(),
-        InputForm: InputForm,
         value:{},
         showAlert:false,
         leaveScene:false,
         loginUser:null,
         submitting:false
-      }
-
-      this.onSubmit = this.onSubmit.bind(this)
-      this.onFormChange = this.onFormChange.bind(this)
-      this.getFormOptions = this.getFormOptions.bind(this);
-    }
-
-    getFormOptions(){
-      function template(locals){
-        return (
-          <View style={{width:'100%', flexDirection:'column'}}>
-          <Divider style={{ backgroundColor: COLOR_TEXT_GREY_LIGHT }} />
-          {locals.inputs.username}
-          <Divider style={{ backgroundColor: COLOR_TEXT_GREY_LIGHT }} />
-          {locals.inputs.phone}
-          <Divider style={{ backgroundColor: COLOR_TEXT_GREY_LIGHT }} />
-          {locals.inputs.password}
-          <Divider style={{ backgroundColor: COLOR_TEXT_GREY_LIGHT }} />
-          </View>
-        );
-      }
-
-      return ({
-        template: template,
-        stylesheet: STYLESHEET,
-        auto:'placeholders',
-        fields: {
-          username: {
-            placeholderTextColor:COLOR_TEXT_GREY_LIGHT,
-            error: 'Invalid Username',
-            autoCorrect: false,
-          },
-          phone: {
-            placeholderTextColor:COLOR_TEXT_GREY_LIGHT,
-            error: 'Invalid Phone',
-            autoCorrect: false,
-          },
-          password: {
-            placeholderTextColor:COLOR_TEXT_GREY_LIGHT,
-            error: 'Invalid Password',
-            autoCorrect: false,
-            secureTextEntry:true
-          },
-        }
-      })
-    }
-
-    componentWillMount(){
-    }
-
-    onSubmit() {
-      // perform login
-      var value = this.refs.form.getValue();
-      if (value) {
-        client.service('users').create({
-          username:value.username,
-          password:value.password,
-          phone:value.phone
-        })
-        .then((res)=>{
-           console.log('success', {res});
-           // this.props.loginSuccessful(res);
-           // this.props.history.push('/dashboard');
-           return this.props.navigation.navigate('Login')
-        })
-        .catch((err)=>{
-          console.log({err});
-          // alert('Invalid USER or PASSWORD');
-        })
-
-        // let formData = new FormData();
-        // formData.append('username',value.username)
-        // formData.append('password',value.Password)
-
-        this.setState({submitting:true})
       }
     }
 
@@ -148,7 +61,42 @@ class Profile extends Component {
             contentContainerStyle={styles.container}
             >
               <ImageBackground source={require('../assets/badmintonbg.jpg')} style={{ width:'100%', height:'100%', opacity:0.8, backgroundColor:'#000', justifyContent:'space-around'}} >
-                <View><Text>Profile</Text></View>
+                {/*User info*/}
+                <View style={{padding:10, flex:1, flexDirection:'row', justifyContent:'space-around'}}>
+                  <Avatar
+                    size="large"
+                    rounded
+                    title={this.props.profile.userInfo.username.substring(0,1).toUpperCase()}
+                    titleStyle={{color:COLOR_ORANGE, fontWeight:'400', fontSize:45}}
+                    containerStyle={{borderWidth: 3, borderColor: COLOR_ORANGE, borderStyle:'solid', alignSelf:'flex-end'}}
+                    overlayContainerStyle={{backgroundColor: '#000'}}
+                  />
+                  <View style={{flex:1, flexDirection:'column', marginLeft:20, justifyContent:'flex-end'}}>
+                    <Text style={USERNAME}>{this.props.profile.userInfo.username.toUpperCase()}</Text>
+                    {/*}<Text style={USERID}>Member ID : {this.props.profile.userInfo.id.substring(0,8).toUpperCase()}</Text>*/}
+                  </View>
+                </View>
+                <Divider style={{ backgroundColor: COLOR_TEXT_GREY_LIGHT, marginVertical:10 }} />
+                {/*User info*/}
+
+                <View style={{flex:0.1, flexDirection:'row'}}>
+                    <Text style={{color:'#fff'}}>Email : </Text>
+                    <Text style={{color:'#fff'}}>{this.props.profile.userInfo.email}</Text>
+                </View>
+                <Divider style={{ backgroundColor: COLOR_TEXT_GREY_LIGHT, marginVertical:10 }} />
+                <View style={{flex:1, flexDirection:'row'}}>
+                    <Text style={{color:'#fff'}}>Join at : </Text>
+                    <Text style={{color:'#fff'}}>{moment(this.props.profile.userInfo.phone).format('DD/MM/YYYY HH:mm')}</Text>
+                </View>
+
+                <View style={{flex:12}, justifyContent='flex-end'}>
+                  <TouchableOpacity style={BTN_PRIMARY} onPress={()=>{
+                      client.logout()
+                      this.props.navigation.navigate('Login')
+                    }}>
+                    <Text style={BTN_TEXT}>LOG OUT</Text>
+                  </TouchableOpacity>
+                </View>
               </ImageBackground>
             </KeyboardAwareScrollView>
         )
@@ -172,7 +120,7 @@ const styles = {
   },
   container: {
     flexDirection: 'row',
-    justifyContent:'space-around',
+    // justifyContent:'space-around',
     flex:1,
     paddingTop: 20,
     paddingHorizontal:20,
@@ -201,7 +149,7 @@ const styles = {
 
 function mapStateToProps(state) {
   return {
-    // profile: state.profile,
+    profile: state.profile,
     // app: state.app
   }
 }

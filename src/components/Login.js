@@ -141,6 +141,10 @@ class Login extends Component {
            }
 
            AsyncStorage.setItem('@authinfo',JSON.stringify(authInfoObj));
+           this.setState({
+             submitting:false,
+             value:{}
+           })
            return this.props.navigation.navigate('Home')
         })
         .catch((err)=>{
